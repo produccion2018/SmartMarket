@@ -21,12 +21,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <NavItem to="/" icon={<ScanBarcode className="size-5" />} label="Caja" />
         <NavItem to="/inventario" icon={<Boxes className="size-5" />} label="Inventario" />
-
-        <div className="mt-auto hidden rounded-lg bg-panel-foreground/10 p-3 text-[11px] leading-relaxed opacity-80 md:block">
-          Terminal 01 · Cajero demo
-          <br />
-          Backend Python pendiente
-        </div>
       </aside>
 
       <main className="min-w-0 flex-1">{children}</main>
