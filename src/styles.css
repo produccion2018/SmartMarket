@@ -491,3 +491,32 @@
     animation: none !important;
   }
 }
+
+/* ───────────── SmartMarket · diseño premium ───────────── */
+.sm-receipt {
+  --zz: 10px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--zz)) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--zz) * 2) var(--zz) repeat-x;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--zz)) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--zz) * 2) var(--zz) repeat-x;
+  padding-bottom: var(--zz);
+}
+.sm-float {
+  animation: sm-float 3s ease-in-out infinite;
+}
+@keyframes sm-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sm-float {
+    animation: none !important;
+  }
+}

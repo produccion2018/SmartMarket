@@ -80,19 +80,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       </div>
 
-      <aside className="sm-slide sticky top-0 z-10 flex h-screen w-16 shrink-0 flex-col items-center gap-2 bg-panel py-4 text-panel-foreground md:w-56 md:items-stretch md:px-3">
+      <aside className="sm-slide sticky top-0 z-10 flex h-screen w-16 shrink-0 flex-col items-center gap-2 bg-gradient-to-b from-panel via-panel to-[oklch(0.22_0.05_170)] py-5 text-panel-foreground md:w-60 md:items-stretch md:px-4">
         <div className="mb-4 flex items-center gap-2 px-1 md:px-2">
           <span className="sm-logo flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
             <Store className="size-5" />
           </span>
           <div className="hidden md:block">
             <p className="font-display text-sm leading-tight font-bold">SmartMarket</p>
-            <p className="text-[11px] opacity-70">POS v1.0</p>
+            <p className="text-[11px] tracking-wider text-accent uppercase">POS · v1.0</p>
           </div>
         </div>
 
         <NavItem to="/" icon={<ScanBarcode className="size-5" />} label="Caja" />
         <NavItem to="/inventario" icon={<Boxes className="size-5" />} label="Inventario" />
+
+        <div className="mt-auto hidden rounded-2xl border border-panel-foreground/10 bg-panel-foreground/5 p-3 md:block">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-accent to-success font-display text-xs font-bold text-panel">
+              CJ
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">Cajero de turno</p>
+              <p className="flex items-center gap-1.5 text-[11px] opacity-70">
+                <span className="size-1.5 rounded-full bg-accent" /> Caja 01 · En línea
+              </p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <main className="relative z-[1] min-w-0 flex-1">{children}</main>

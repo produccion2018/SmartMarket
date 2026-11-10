@@ -1,23 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Minus, Plus, ScanBarcode, Search, Trash2, X } from "lucide-react";
+import {
+  Clock,
+  CupSoda,
+  Croissant,
+  LayoutGrid,
+  Milk,
+  Minus,
+  Package,
+  Plus,
+  Receipt,
+  ScanBarcode,
+  Search,
+  ShoppingBasket,
+  SprayCan,
+  Trash2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { TicketDialog } from "@/components/pos/TicketDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { money } from "@/lib/format";
-import { CATEGORIES, type Product } from "@/data/products";
+import { CATEGORIES, LOW_STOCK_THRESHOLD, type Product } from "@/data/products";
 import {
   checkout as checkoutApi,
   findByBarcode,
@@ -48,6 +58,36 @@ export const Route = createFileRoute("/")({
 type CartItem = { product: Product; qty: number };
 
 const d = (n: number) => ({ "--d": n }) as CSSProperties;
+
+/** Ícono y tono (hue oklch) por categoría. */
+const CAT_STYLE: Record<string, { icon: LucideIcon; hue: number }> = {
+  Almacén: { icon: Package, hue: 70 },
+  Bebidas: { icon: CupSoda, hue: 240 },
+  Frescos: { icon: Milk, hue: 200 },
+  Limpieza: { icon: SprayCan, hue: 300 },
+  Panadería: { icon: Croissant, hue: 45 },
+};
+
+function catStyle(category: string) {
+  return CAT_STYLE[category] ?? { icon: ShoppingBasket, hue: 165 };
+}
+
+/** Reloj en vivo (vacío en el servidor para no romper la hidratación). */
+function LiveClock() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span className="tabular">
+      {now
+        ? now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        : "--:--:--"}
+    </span>
+  );
+}
 
 function CajaPage() {
   const queryClient = useQueryClient();
@@ -148,11 +188,32 @@ function CajaPage() {
       <div className="grid gap-4 p-4 lg:grid-cols-[1fr_380px] lg:p-6">
         {/* ---------------- Catálogo / escaneo ---------------- */}
         <section className="min-w-0">
-          <header className="sm-rise mb-4" style={d(0)}>
-            <h1 className="sm-shimmer text-3xl font-bold">Caja</h1>
-            <p className="text-sm text-muted-foreground">
-              Escaneá un código o tocá un producto para sumarlo al carrito.
-            </p>
+          <header
+            className="sm-rise relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-panel via-panel to-primary p-5 text-panel-foreground shadow-panel sm:p-6"
+            style={d(0)}
+          >
+            <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-accent/30 blur-3xl" />
+            <div className="relative flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-[11px] tracking-[0.25em] text-accent uppercase">
+                  Punto de venta
+                </p>
+                <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Caja</h1>
+                <p className="mt-1 text-sm opacity-75">
+                  Escaneá un código o tocá un producto para sumarlo al carrito.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="inline-flex items-center gap-2 rounded-full border border-panel-foreground/15 bg-panel-foreground/10 px-3 py-1.5 backdrop-blur">
+                  <span className="size-2 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
+                  Caja 01 · Abierta
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-panel-foreground/15 bg-panel-foreground/10 px-3 py-1.5 backdrop-blur">
+                  <Clock className="size-3.5" />
+                  <LiveClock />
+                </span>
+              </div>
+            </div>
           </header>
 
           <form onSubmit={handleScan} className="sm-rise mb-3 flex gap-2" style={d(1)}>
@@ -173,7 +234,7 @@ function CajaPage() {
             </Button>
           </form>
 
-          <div className="sm-rise mb-4 flex flex-col gap-2 sm:flex-row" style={d(2)}>
+          <div className="sm-rise mb-3 flex flex-col gap-2 sm:flex-row" style={d(2)}>
             <div className="relative flex-1">
               <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -183,19 +244,46 @@ function CajaPage() {
                 className="pl-9"
               />
             </div>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas las categorías</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          </div>
+
+          <div className="sm-rise -mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-1" style={d(2)}>
+            {(["todas", ...CATEGORIES] as string[]).map((c) => {
+              const active = category === c;
+              const st = c === "todas" ? { icon: LayoutGrid, hue: 165 } : catStyle(c);
+              const Icon = st.icon;
+              const count =
+                c === "todas" ? products.length : products.filter((p) => p.category === c).length;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-full border py-1.5 pr-3 pl-1.5 text-sm font-medium transition-all duration-300 ${
+                    active
+                      ? "border-panel bg-panel text-panel-foreground shadow-panel"
+                      : "border-border bg-card/80 text-foreground hover:-translate-y-0.5 hover:border-primary/50"
+                  }`}
+                >
+                  <span
+                    className="grid size-7 place-items-center rounded-full"
+                    style={{
+                      background: active ? "var(--color-accent)" : `oklch(0.95 0.04 ${st.hue})`,
+                      color: active
+                        ? "var(--color-accent-foreground)"
+                        : `oklch(0.45 0.12 ${st.hue})`,
+                    }}
+                  >
+                    <Icon className="size-3.5" />
+                  </span>
+                  {c === "todas" ? "Todas" : c}
+                  <span
+                    className={`text-xs tabular ${active ? "opacity-70" : "text-muted-foreground"}`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {isLoading ? (
@@ -207,18 +295,67 @@ function CajaPage() {
                   <button
                     onClick={() => addToCart(p)}
                     disabled={p.stock === 0}
-                    className="sm-card group flex h-full w-full flex-col rounded-xl border border-border bg-card/90 p-3 text-left backdrop-blur disabled:cursor-not-allowed disabled:opacity-50"
+                    className="sm-card group flex h-full w-full flex-col rounded-2xl border border-border bg-card/90 p-4 text-left backdrop-blur disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <span className="text-[11px] tracking-wide text-muted-foreground uppercase">
-                      {p.category}
-                    </span>
-                    <span className="mt-1 line-clamp-2 text-sm font-medium">{p.name}</span>
-                    <span className="mt-auto pt-3 font-display text-lg font-bold tabular transition-colors group-hover:text-primary">
-                      {money(p.price)}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {p.stock === 0 ? "Sin stock" : `Stock ${p.stock} ${p.unit}`}
-                    </span>
+                    {(() => {
+                      const st = catStyle(p.category);
+                      const Icon = st.icon;
+                      const low = p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD;
+                      const pct = Math.min(100, (p.stock / 80) * 100);
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span
+                              className="grid size-10 place-items-center rounded-xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6"
+                              style={{
+                                background: `linear-gradient(135deg, oklch(0.95 0.05 ${st.hue}), oklch(0.88 0.08 ${st.hue}))`,
+                                color: `oklch(0.42 0.13 ${st.hue})`,
+                              }}
+                            >
+                              <Icon className="size-5" />
+                            </span>
+                            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                              {p.category}
+                            </span>
+                          </div>
+                          <span className="mt-3 line-clamp-2 text-sm leading-snug font-semibold">
+                            {p.name}
+                          </span>
+                          <span className="mt-auto pt-3 font-display text-xl font-bold tabular transition-colors group-hover:text-primary">
+                            {money(p.price)}
+                          </span>
+                          <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                background:
+                                  p.stock === 0
+                                    ? "var(--color-destructive)"
+                                    : low
+                                      ? "var(--color-warning)"
+                                      : "var(--color-success)",
+                              }}
+                            />
+                          </div>
+                          <span
+                            className={`mt-1 text-[11px] ${
+                              p.stock === 0
+                                ? "text-destructive"
+                                : low
+                                  ? "text-warning-foreground"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {p.stock === 0
+                              ? "Sin stock"
+                              : low
+                                ? `¡Quedan ${p.stock} ${p.unit}!`
+                                : `Stock ${p.stock} ${p.unit}`}
+                          </span>
+                        </>
+                      );
+                    })()}
                     <span className="sm-plus">
                       <Plus className="size-4" />
                     </span>
@@ -234,9 +371,15 @@ function CajaPage() {
 
         {/* ---------------- Carrito / cobro ---------------- */}
         <aside className="sm-rise lg:sticky lg:top-6 lg:h-fit" style={d(3)}>
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-panel">
-            <div className="flex items-center justify-between bg-panel px-4 py-3 text-panel-foreground">
-              <h2 className="text-base font-semibold">Ticket actual</h2>
+          <div className="sm-receipt flex flex-col overflow-hidden rounded-t-3xl border border-border bg-card shadow-panel">
+            <div className="relative flex items-center justify-between overflow-hidden bg-gradient-to-r from-panel to-primary px-5 py-4 text-panel-foreground">
+              <div className="pointer-events-none absolute -top-10 right-10 h-24 w-24 rounded-full bg-accent/25 blur-2xl" />
+              <h2 className="relative flex items-center gap-2 text-base font-semibold">
+                <span className="grid size-8 place-items-center rounded-lg bg-accent text-accent-foreground">
+                  <Receipt className="size-4" />
+                </span>
+                Ticket actual
+              </h2>
               <Badge key={units} variant="secondary" className="sm-bump">
                 {units} u.
               </Badge>
@@ -244,8 +387,12 @@ function CajaPage() {
 
             <ul className="max-h-[38vh] divide-y divide-border overflow-y-auto">
               {cart.length === 0 && (
-                <li className="p-6 text-center text-sm text-muted-foreground">
+                <li className="flex flex-col items-center gap-3 p-8 text-center text-sm text-muted-foreground">
+                  <span className="sm-float grid size-14 place-items-center rounded-2xl border-2 border-dashed border-border text-primary">
+                    <ShoppingBasket className="size-6" />
+                  </span>
                   El carrito está vacío.
+                  <span className="text-xs">Escaneá o tocá un producto para empezar.</span>
                 </li>
               )}
               {cart.map(({ product, qty }) => (
@@ -312,20 +459,30 @@ function CajaPage() {
                 ))}
               </div>
 
-              <Select
-                value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as CheckoutPayload["paymentMethod"])}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="debito">Tarjeta de débito</SelectItem>
-                  <SelectItem value="credito">Tarjeta de crédito</SelectItem>
-                  <SelectItem value="qr">QR / billetera</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-4 gap-2">
+                {(
+                  [
+                    ["efectivo", "Efectivo", "💵"],
+                    ["debito", "Débito", "💳"],
+                    ["credito", "Crédito", "🏦"],
+                    ["qr", "QR", "📱"],
+                  ] as [CheckoutPayload["paymentMethod"], string, string][]
+                ).map(([v, label, emoji]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setPaymentMethod(v)}
+                    className={`flex flex-col items-center gap-1 rounded-xl border py-2 text-[11px] font-medium transition-all duration-300 ${
+                      paymentMethod === v
+                        ? "border-primary bg-primary/10 text-primary shadow-[0_0_0_3px_oklch(0.55_0.13_165/0.15)]"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{emoji}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
 
               <div className="space-y-1 border-t border-border pt-3 text-sm">
                 <div className="flex justify-between">
@@ -336,9 +493,14 @@ function CajaPage() {
                   <span className="text-muted-foreground">Descuento</span>
                   <span className="tabular">- {money(discountAmount)}</span>
                 </div>
-                <div className="flex items-baseline justify-between pt-1">
-                  <span className="font-display text-base font-bold">TOTAL</span>
-                  <span key={total} className="sm-bump font-display text-2xl font-bold tabular">
+                <div className="mt-2 flex items-baseline justify-between rounded-xl bg-panel px-4 py-3 text-panel-foreground">
+                  <span className="font-display text-sm font-bold tracking-widest opacity-80">
+                    TOTAL
+                  </span>
+                  <span
+                    key={total}
+                    className="sm-bump font-display text-3xl font-bold text-accent tabular"
+                  >
                     {money(total)}
                   </span>
                 </div>
