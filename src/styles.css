@@ -100,3 +100,394 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* ───────────── SmartMarket · animaciones premium ───────────── */
+
+:root {
+  --sm-base: 1.7s;
+}
+:root.sm-ready {
+  --sm-base: 0s;
+}
+:root.sm-ready .sm-intro {
+  display: none;
+}
+
+/* Intro con escáner */
+.sm-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at center, oklch(0.33 0.06 168), var(--color-panel) 70%);
+  color: var(--color-panel-foreground);
+  animation: sm-intro-out 0.7s cubic-bezier(0.7, 0, 0.3, 1) 1.7s forwards;
+}
+@keyframes sm-intro-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.05);
+    filter: blur(8px);
+  }
+}
+.sm-barcode {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 72px;
+  padding: 0 14px;
+  animation: sm-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.sm-barcode > i {
+  display: block;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--color-panel-foreground);
+  transform-origin: bottom;
+  animation: sm-bar 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.15s + var(--i) * 30ms);
+}
+@keyframes sm-bar {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.sm-barcode::after {
+  content: "";
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  height: 3px;
+  border-radius: 9999px;
+  background: oklch(0.65 0.24 25);
+  box-shadow:
+    0 0 12px oklch(0.65 0.24 25),
+    0 0 30px oklch(0.65 0.24 25 / 60%);
+  animation: sm-scan 1.1s ease-in-out 0.5s 2 alternate both;
+}
+@keyframes sm-scan {
+  from {
+    top: 0;
+  }
+  to {
+    top: calc(100% - 3px);
+  }
+}
+@keyframes sm-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sm-letter {
+  display: inline-block;
+  animation: sm-letter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.6s + var(--i) * 40ms);
+}
+@keyframes sm-letter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.sm-beep {
+  animation: sm-beep 0.4s ease-out 1.5s both;
+}
+@keyframes sm-beep {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Entrada escalonada */
+.sm-rise {
+  animation: sm-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--sm-base) + var(--d, 0) * 70ms);
+}
+@keyframes sm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.sm-slide {
+  animation: sm-slide 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--sm-base);
+}
+@keyframes sm-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Fondo vivo */
+.sm-blobs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sm-blobs span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.22;
+  animation: sm-drift 22s ease-in-out infinite alternate;
+}
+@keyframes sm-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6vw, 8vh) scale(1.15);
+  }
+  100% {
+    transform: translate(-5vw, 4vh) scale(0.9);
+  }
+}
+
+/* Título con brillo */
+.sm-shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--color-foreground) 40%,
+    var(--color-primary) 50%,
+    oklch(0.7 0.17 105) 56%,
+    var(--color-foreground) 66%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sm-shine 6s linear infinite;
+}
+@keyframes sm-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+/* Láser del escáner */
+.sm-laser {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 30%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, oklch(0.65 0.24 25), transparent);
+  box-shadow: 0 0 10px oklch(0.65 0.24 25 / 70%);
+  animation: sm-laser 2.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes sm-laser {
+  from {
+    left: 0;
+  }
+  to {
+    left: 70%;
+  }
+}
+
+/* Tarjetas de producto */
+.sm-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.35s,
+    border-color 0.35s;
+}
+.sm-card:not(:disabled):hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 22px 40px -22px oklch(0.28 0.06 165 / 0.55),
+    0 0 0 1px var(--color-primary);
+}
+.sm-card:not(:disabled):active {
+  transform: translateY(-1px) scale(0.97);
+}
+.sm-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 70%) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.sm-card:not(:disabled):hover::after {
+  transition: transform 0.8s ease;
+  transform: translateX(120%);
+}
+.sm-plus {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  opacity: 0;
+  transform: scale(0.4) rotate(-90deg);
+  transition:
+    opacity 0.3s,
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.sm-card:not(:disabled):hover .sm-plus {
+  opacity: 1;
+  transform: none;
+}
+
+/* Carrito */
+.sm-item-in {
+  animation: sm-item-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes sm-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+    background: oklch(0.84 0.17 105 / 35%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    background: transparent;
+  }
+}
+.sm-bump {
+  display: inline-block;
+  animation: sm-bump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes sm-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Botón cobrar con brillo y glow */
+.sm-cta {
+  position: relative;
+  overflow: hidden;
+}
+.sm-cta:not(:disabled) {
+  animation: sm-glow 2.4s ease-in-out infinite;
+}
+.sm-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 45%) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: sm-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.sm-cta:disabled::after {
+  display: none;
+}
+@keyframes sm-sweep {
+  0%,
+  40% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+@keyframes sm-glow {
+  0%,
+  100% {
+    box-shadow: 0 10px 30px -12px oklch(0.62 0.15 155 / 60%);
+  }
+  50% {
+    box-shadow: 0 14px 40px -8px oklch(0.62 0.15 155 / 90%);
+  }
+}
+
+/* Logo con pulso */
+.sm-logo {
+  position: relative;
+}
+.sm-logo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 var(--color-accent);
+  animation: sm-pulse 2.4s ease-out infinite;
+}
+@keyframes sm-pulse {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.84 0.17 105 / 70%);
+  }
+  100% {
+    box-shadow: 0 0 0 12px oklch(0.84 0.17 105 / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm-intro {
+    display: none;
+  }
+  .sm-rise,
+  .sm-slide,
+  .sm-letter,
+  .sm-blobs span,
+  .sm-shimmer,
+  .sm-laser,
+  .sm-item-in,
+  .sm-bump,
+  .sm-cta,
+  .sm-cta::after,
+  .sm-logo::after {
+    animation: none !important;
+  }
+}

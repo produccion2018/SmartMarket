@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Minus, Plus, ScanBarcode, Search, Trash2, X } from "lucide-react";
@@ -47,6 +47,8 @@ export const Route = createFileRoute("/")({
 
 type CartItem = { product: Product; qty: number };
 
+const d = (n: number) => ({ "--d": n }) as CSSProperties;
+
 function CajaPage() {
   const queryClient = useQueryClient();
 
@@ -61,8 +63,7 @@ function CajaPage() {
   const [category, setCategory] = useState<string>("todas");
   const [barcode, setBarcode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [paymentMethod, setPaymentMethod] =
-    useState<CheckoutPayload["paymentMethod"]>("efectivo");
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPayload["paymentMethod"]>("efectivo");
   const [sale, setSale] = useState<Sale | null>(null);
   const barcodeRef = useRef<HTMLInputElement>(null);
 
@@ -85,9 +86,7 @@ function CajaPage() {
     setCart((prev) => {
       const found = prev.find((i) => i.product.id === product.id);
       if (found) {
-        return prev.map((i) =>
-          i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i,
-        );
+        return prev.map((i) => (i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i));
       }
       return [...prev, { product, qty: 1 }];
     });
@@ -149,15 +148,16 @@ function CajaPage() {
       <div className="grid gap-4 p-4 lg:grid-cols-[1fr_380px] lg:p-6">
         {/* ---------------- Catálogo / escaneo ---------------- */}
         <section className="min-w-0">
-          <header className="mb-4">
-            <h1 className="text-2xl font-bold">Caja</h1>
+          <header className="sm-rise mb-4" style={d(0)}>
+            <h1 className="sm-shimmer text-3xl font-bold">Caja</h1>
             <p className="text-sm text-muted-foreground">
               Escaneá un código o tocá un producto para sumarlo al carrito.
             </p>
           </header>
 
-          <form onSubmit={handleScan} className="mb-3 flex gap-2">
-            <div className="relative flex-1">
+          <form onSubmit={handleScan} className="sm-rise mb-3 flex gap-2" style={d(1)}>
+            <div className="relative flex-1 overflow-hidden rounded-md">
+              <span className="sm-laser" />
               <ScanBarcode className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={barcodeRef}
@@ -173,7 +173,7 @@ function CajaPage() {
             </Button>
           </form>
 
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <div className="sm-rise mb-4 flex flex-col gap-2 sm:flex-row" style={d(2)}>
             <div className="relative flex-1">
               <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -202,24 +202,28 @@ function CajaPage() {
             <p className="text-sm text-muted-foreground">Cargando productos…</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => addToCart(p)}
-                  disabled={p.stock === 0}
-                  className="group flex flex-col rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary hover:shadow-panel disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <span className="text-[11px] tracking-wide text-muted-foreground uppercase">
-                    {p.category}
-                  </span>
-                  <span className="mt-1 line-clamp-2 text-sm font-medium">{p.name}</span>
-                  <span className="mt-auto pt-3 font-display text-lg font-bold tabular">
-                    {money(p.price)}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {p.stock === 0 ? "Sin stock" : `Stock ${p.stock} ${p.unit}`}
-                  </span>
-                </button>
+              {filtered.map((p, i) => (
+                <div key={p.id} className="sm-rise" style={d(3 + Math.min(i, 12))}>
+                  <button
+                    onClick={() => addToCart(p)}
+                    disabled={p.stock === 0}
+                    className="sm-card group flex h-full w-full flex-col rounded-xl border border-border bg-card/90 p-3 text-left backdrop-blur disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className="text-[11px] tracking-wide text-muted-foreground uppercase">
+                      {p.category}
+                    </span>
+                    <span className="mt-1 line-clamp-2 text-sm font-medium">{p.name}</span>
+                    <span className="mt-auto pt-3 font-display text-lg font-bold tabular transition-colors group-hover:text-primary">
+                      {money(p.price)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {p.stock === 0 ? "Sin stock" : `Stock ${p.stock} ${p.unit}`}
+                    </span>
+                    <span className="sm-plus">
+                      <Plus className="size-4" />
+                    </span>
+                  </button>
+                </div>
               ))}
               {filtered.length === 0 && (
                 <p className="text-sm text-muted-foreground">Sin resultados.</p>
@@ -229,11 +233,13 @@ function CajaPage() {
         </section>
 
         {/* ---------------- Carrito / cobro ---------------- */}
-        <aside className="lg:sticky lg:top-6 lg:h-fit">
+        <aside className="sm-rise lg:sticky lg:top-6 lg:h-fit" style={d(3)}>
           <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-panel">
             <div className="flex items-center justify-between bg-panel px-4 py-3 text-panel-foreground">
               <h2 className="text-base font-semibold">Ticket actual</h2>
-              <Badge variant="secondary">{units} u.</Badge>
+              <Badge key={units} variant="secondary" className="sm-bump">
+                {units} u.
+              </Badge>
             </div>
 
             <ul className="max-h-[38vh] divide-y divide-border overflow-y-auto">
@@ -243,7 +249,7 @@ function CajaPage() {
                 </li>
               )}
               {cart.map(({ product, qty }) => (
-                <li key={product.id} className="flex items-center gap-2 p-3">
+                <li key={product.id} className="sm-item-in flex items-center gap-2 p-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{product.name}</p>
                     <p className="text-xs text-muted-foreground tabular">
@@ -254,7 +260,9 @@ function CajaPage() {
                     <Button size="icon" variant="outline" onClick={() => changeQty(product.id, -1)}>
                       <Minus />
                     </Button>
-                    <span className="w-6 text-center text-sm tabular">{qty}</span>
+                    <span key={qty} className="sm-bump w-6 text-center text-sm tabular">
+                      {qty}
+                    </span>
                     <Button size="icon" variant="outline" onClick={() => changeQty(product.id, 1)}>
                       <Plus />
                     </Button>
@@ -330,14 +338,16 @@ function CajaPage() {
                 </div>
                 <div className="flex items-baseline justify-between pt-1">
                   <span className="font-display text-base font-bold">TOTAL</span>
-                  <span className="font-display text-2xl font-bold tabular">{money(total)}</span>
+                  <span key={total} className="sm-bump font-display text-2xl font-bold tabular">
+                    {money(total)}
+                  </span>
                 </div>
               </div>
 
               <Button
                 variant="cobro"
                 size="xl"
-                className="w-full"
+                className="sm-cta w-full"
                 disabled={cart.length === 0 || cobrar.isPending}
                 onClick={() => cobrar.mutate()}
               >
