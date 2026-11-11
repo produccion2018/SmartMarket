@@ -89,6 +89,47 @@ function LiveClock() {
   );
 }
 
+/* ───────── Recorrido automático (?tour=1, lo usa el portfolio) ─────────
+   Ejecuta un paso cada `interval` ms. Si el usuario hace clic, scroll o toca la
+   pantalla, se pausa y retoma solo después de unos segundos sin actividad. */
+function useDemoTour(steps: Array<() => void>, interval = 2600, startDelay = 2900) {
+  const [active, setActive] = useState(false);
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
+
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("tour")) return;
+    setActive(true);
+    let i = 0;
+    let paused = false;
+    let idle = 0;
+    let timer = 0;
+    const onUser = () => {
+      paused = true;
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => (paused = false), 9000);
+    };
+    const evs = ["wheel", "touchstart", "mousedown", "keydown"] as const;
+    evs.forEach((e) => window.addEventListener(e, onUser, { passive: true }));
+    const start = window.setTimeout(() => {
+      timer = window.setInterval(() => {
+        if (paused) return;
+        const list = stepsRef.current;
+        list[i % list.length]?.();
+        i++;
+      }, interval);
+    }, startDelay);
+    return () => {
+      window.clearTimeout(start);
+      window.clearInterval(timer);
+      window.clearTimeout(idle);
+      evs.forEach((e) => window.removeEventListener(e, onUser));
+    };
+  }, [interval, startDelay]);
+
+  return active;
+}
+
 function CajaPage() {
   const queryClient = useQueryClient();
 
@@ -121,6 +162,43 @@ function CajaPage() {
   const discountAmount = subtotal * (discount / 100);
   const total = subtotal - discountAmount;
   const units = cart.reduce((acc, i) => acc + i.qty, 0);
+
+  // Pasos del recorrido automático: filtra, escanea, agrega y cambia forma de pago.
+  const pick = (cat: string, n = 0) =>
+    products.filter((p) => p.stock > 0 && (cat === "todas" || p.category === cat))[n];
+  const tourAdd = (cat: string, n = 0) => {
+    const p = pick(cat, n);
+    if (p) addToCart(p);
+  };
+  const tourScan = () => {
+    const p = pick("todas", 3);
+    if (!p) return;
+    setBarcode(p.barcode);
+    window.setTimeout(() => {
+      addToCart(p);
+      toast.success(`${p.name} agregado`, { description: "Escaneado con lector" });
+      setBarcode("");
+    }, 900);
+  };
+  const touring = useDemoTour([
+    () => setCategory("Bebidas"),
+    () => tourAdd("Bebidas"),
+    () => tourAdd("Bebidas", 1),
+    () => setCategory("Almacén"),
+    () => tourAdd("Almacén"),
+    () => tourScan(),
+    () => setPaymentMethod("debito"),
+    () => setCategory("Panadería"),
+    () => tourAdd("Panadería"),
+    () => tourAdd("Panadería"),
+    () => setPaymentMethod("qr"),
+    () => setCategory("Limpieza"),
+    () => {
+      setCart([]);
+      setCategory("todas");
+      setPaymentMethod("efectivo");
+    },
+  ]);
 
   function addToCart(product: Product) {
     setCart((prev) => {
@@ -185,6 +263,12 @@ function CajaPage() {
 
   return (
     <AppShell>
+      {touring && (
+        <div className="pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-primary/40 bg-card/90 px-4 py-2 text-xs text-muted-foreground shadow-panel backdrop-blur-xl">
+          <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-primary align-middle" />
+          Recorrido automático · tocá para usarlo vos
+        </div>
+      )}
       <div className="grid gap-4 p-4 lg:grid-cols-[1fr_380px] lg:p-6">
         {/* ---------------- Catálogo / escaneo ---------------- */}
         <section className="min-w-0">
